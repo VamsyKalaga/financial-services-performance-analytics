@@ -1,0 +1,11 @@
+product_id,product_name,product_category,interest_rate
+1,Checking Account,Deposit,0.5
+2,Savings Account,Deposit,3.25
+3,Premium Savings,Deposit,4.1
+4,Personal Loan,Lending,8.5
+5,Auto Loan,Lending,7.25
+6,Mortgage,Lending,6.75
+7,Credit Card,Credit,18.99
+8,Business Account,Business,1.5
+9,Investment Account,Investment,5.25
+10,Retirement Account,Investment,4.75
