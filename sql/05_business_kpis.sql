@@ -277,3 +277,4 @@ SELECT
         FROM transactions
         WHERE status = 'Completed'
     ) AS average_transaction_value;
+    
