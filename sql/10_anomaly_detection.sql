@@ -351,3 +351,55 @@ WHERE t.status = 'Completed'
 GROUP BY t.merchant_category
 
 ORDER BY anomaly_rate_percent DESC;
+-- Persistent anomaly view for downstream analysis
+DROP VIEW IF EXISTS transaction_anomalies;
+
+CREATE VIEW transaction_anomalies AS
+WITH transaction_stats AS (
+    SELECT
+        PERCENTILE_CONT(0.25)
+            WITHIN GROUP (ORDER BY amount) AS q1,
+        PERCENTILE_CONT(0.50)
+            WITHIN GROUP (ORDER BY amount) AS median_amount,
+        PERCENTILE_CONT(0.75)
+            WITHIN GROUP (ORDER BY amount) AS q3
+    FROM transactions
+    WHERE status = 'Completed'
+),
+iqr_bounds AS (
+    SELECT
+        q1,
+        median_amount,
+        q3,
+        q3 - q1 AS iqr,
+        q1 - (1.5 * (q3 - q1)) AS lower_bound,
+        q3 + (1.5 * (q3 - q1)) AS upper_bound
+    FROM transaction_stats
+)
+SELECT
+    t.transaction_id,
+    t.customer_id,
+    t.account_id,
+    t.transaction_date,
+    t.transaction_type,
+    t.amount,
+    t.merchant_category,
+    t.channel,
+    t.status,
+    b.q1,
+    b.median_amount,
+    b.q3,
+    b.iqr,
+    b.lower_bound,
+    b.upper_bound,
+    CASE
+        WHEN t.amount > b.upper_bound
+            THEN 'High Amount Anomaly'
+        WHEN t.amount < b.lower_bound
+            THEN 'Low Amount Anomaly'
+        ELSE 'Normal'
+    END AS anomaly_status
+FROM transactions t
+CROSS JOIN iqr_bounds b
+WHERE t.status = 'Completed';
+
